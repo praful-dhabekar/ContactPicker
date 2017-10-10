@@ -1,16 +1,12 @@
 package com.example.praful.contactpicker;
 
-import android.Manifest;
+import android.app.PendingIntent;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
-import android.support.annotation.NonNull;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.telephony.SmsManager;
 import android.util.Log;
@@ -32,7 +28,10 @@ public class MainActivity extends AppCompatActivity {
     private EditText message;
     private Button send;
     private String phoneNo;
+    private String SENT = "SMS_SENT";
+    private String DELIVERED = "SMS_DELIVERED";
 
+    private PendingIntent sentPI, deliveredPI;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -40,6 +39,9 @@ public class MainActivity extends AppCompatActivity {
         textViewName = (TextView) findViewById(R.id.tv_name);
         textViewNumber = (TextView) findViewById(R.id.tv_number);
         userPic = (ImageView) findViewById(R.id.iv_userPic);
+
+        sentPI = PendingIntent.getBroadcast(this, 0, new Intent(SENT), 0);
+        deliveredPI = PendingIntent.getBroadcast(this, 0, new Intent(DELIVERED), 0);
 
         message = (EditText) findViewById(R.id.et_Message);
         send = (Button) findViewById(R.id.btn_sendMessage);
@@ -116,36 +118,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void sendMessage() {
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.SEND_SMS)
-                != PackageManager.PERMISSION_GRANTED) {
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    Manifest.permission.SEND_SMS)) {
-            } else {
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.SEND_SMS},
-                        MY_PERMISSIONS_REQUEST_SEND_SMS);
-            }
-
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        switch (requestCode) {
-            case MY_PERMISSIONS_REQUEST_SEND_SMS: {
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    SmsManager smsManager = SmsManager.getDefault();
-                    smsManager.sendTextMessage(phoneNo, null, message.getText().toString(), null, null);
-                    Toast.makeText(getApplicationContext(), "SMS sent.",
-                            Toast.LENGTH_LONG).show();
-                } else {
-                    Toast.makeText(getApplicationContext(),
-                            "SMS faild, please try again.", Toast.LENGTH_LONG).show();
-                    return;
-                }
-            }
-        }
+        SmsManager smsManager = SmsManager.getDefault();
+        smsManager.sendTextMessage(phoneNo, null, message.getText().toString(), sentPI, deliveredPI);
+        Toast.makeText(getApplicationContext(), "SMS sent.",
+                Toast.LENGTH_LONG).show();
     }
 }
